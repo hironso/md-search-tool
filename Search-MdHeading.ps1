@@ -54,6 +54,31 @@ function Get-MdFile {
     return @(Get-ChildItem -LiteralPath $Path -Recurse -File -Filter '*.md')
 }
 
+function Find-MatchingHeading {
+    <#
+    .SYNOPSIS
+        $File内の#/##見出し行のうち、$Keywordに大文字小文字を区別せず部分一致するものを抽出する。
+    #>
+    param(
+        [System.IO.FileInfo] $File,
+        [string] $Keyword
+    )
+
+    $escapedKeyword = [regex]::Escape($Keyword)
+    $pattern = "^\s{0,3}(?<hashes>#{1,2})(?!#)\s+(?<text>.*$escapedKeyword.*)$"
+
+    $lineMatches = @($File | Select-String -Pattern $pattern)
+
+    return @($lineMatches | ForEach-Object {
+        [PSCustomObject]@{
+            FilePath     = $File.FullName
+            HeadingLevel = $_.Matches[0].Groups['hashes'].Value.Length
+            HeadingText  = $_.Matches[0].Groups['text'].Value
+            LineText     = $_.Line
+        }
+    })
+}
+
 try {
     Test-SearchParameter -Path $Path -Keyword $Keyword
 }

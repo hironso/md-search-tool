@@ -89,4 +89,51 @@ pwsh ./Search-MdHeading.ps1 -Path ./fixtures/docs -Keyword Search
 
 > 補足: PowerShellは関数境界を越えるとパイプライン出力が「展開」されるため、`Get-MdFile`の戻り値が0件のときは`$null`に、1件のときは配列ではなく単一の値になってしまいます。呼び出し側は必ず`@(Get-MdFile ...)`のように**呼び出し時点で`@(...)`により再ラップ**し、0件・1件・複数件のいずれでも配列として扱ってください(詳細は`research.md`参照)。
 
-<!-- タスク4以降で、見出し検索・結果表示・エンドツーエンドの実行例をここに追記する -->
+#### 見出し検索・キーワード一致(タスク4)
+
+`Find-MatchingHeading`関数単体の動作は、ドットソース化後に個々のファイルへ対して直接呼び出すことで確認できます。
+
+```powershell
+. ./Search-MdHeading.ps1 -Path ./fixtures/docs -Keyword Search
+
+# 1. keyword=Search を複数ファイルに対して実行 -> #/##(レベル1)見出しのみが4件ヒットする(###見出しは対象外)
+$files = @(Get-MdFile -Path "./fixtures/docs")
+$all = @()
+foreach ($f in $files) { $all += @(Find-MatchingHeading -File $f -Keyword "Search") }
+$all | ForEach-Object { "[$($_.HeadingLevel)] $($_.HeadingText)  <= $(Split-Path $_.FilePath -Leaf)" }
+# => [1] SEARCH in different case  <= case-test.md
+# => [1] Search Tool 概要  <= getting-started.md
+# => [1] インデント見出しのSearchテスト  <= indented.md(先頭3スペースインデントも見出しとして検出される)
+# => [1] 過去のSearch履歴  <= old-notes.md
+
+# 2. keyword=実装 (getting-started.mdの###見出しにのみ存在) -> 0件(レベル3以降は除外される)
+$r2 = @()
+foreach ($f in $files) { $r2 += @(Find-MatchingHeading -File $f -Keyword "実装") }
+$r2.Count
+# => 0
+
+# 3. keyword=スペース (indented.mdの4スペースインデント行にのみ存在) -> 0件(4スペース以上はコードブロック扱いで除外)
+$r3 = @()
+foreach ($f in $files) { $r3 += @(Find-MatchingHeading -File $f -Keyword "スペース") }
+$r3.Count
+# => 0
+
+# 4. keyword=search (小文字) -> 大文字小文字を区別せず "SEARCH in different case" にヒットする
+@(Find-MatchingHeading -File (Get-Item ./fixtures/docs/case-test.md) -Keyword "search") |
+    ForEach-Object { "[$($_.HeadingLevel)] $($_.HeadingText)" }
+# => [1] SEARCH in different case
+
+# 5. keyword=[要確認] (正規表現特殊文字を含むキーワードのリテラル一致)
+@(Find-MatchingHeading -File (Get-Item ./fixtures/docs/special-chars.md) -Keyword "[要確認]") |
+    ForEach-Object { "[$($_.HeadingLevel)] $($_.HeadingText)" }
+# => [1] 価格は[要確認]です
+
+# 6. keyword=a.b ("."がワイルドカードとして誤解釈されずリテラルの"."として一致することを確認)
+@(Find-MatchingHeading -File (Get-Item ./fixtures/docs/special-chars.md) -Keyword "a.b") |
+    ForEach-Object { "[$($_.HeadingLevel)] $($_.HeadingText)" }
+# => [2] a.b.cの表記について
+```
+
+> 補足(否定的検証): `a.b`というキーワードが、もし正規表現として解釈されていた場合に誤って一致してしまう`aXbXc`のような見出しに対しては、実際には一致しない(0件)ことを一時ファイルで確認済みです。`[regex]::Escape`によるエスケープが機能しています。
+
+<!-- タスク5以降で、結果表示・エンドツーエンドの実行例をここに追記する -->
