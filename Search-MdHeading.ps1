@@ -79,6 +79,30 @@ function Find-MatchingHeading {
     })
 }
 
+function Write-SearchResult {
+    <#
+    .SYNOPSIS
+        検索結果をFilePathでグループ化してコンソールへ表示する。0件の場合はヒットなしメッセージを表示する。
+    #>
+    param(
+        [PSCustomObject[]] $Result
+    )
+
+    if ($Result.Count -eq 0) {
+        Write-Output "キーワードにヒットする見出しが見つかりませんでした。"
+        return
+    }
+
+    foreach ($group in @($Result | Group-Object -Property FilePath)) {
+        Write-Output $group.Name
+        foreach ($item in $group.Group) {
+            $headingMark = '#' * $item.HeadingLevel
+            Write-Output "  $headingMark $($item.HeadingText)"
+            Write-Output "    > $($item.LineText)"
+        }
+    }
+}
+
 try {
     Test-SearchParameter -Path $Path -Keyword $Keyword
 }

@@ -136,4 +136,29 @@ $r3.Count
 
 > 補足(否定的検証): `a.b`というキーワードが、もし正規表現として解釈されていた場合に誤って一致してしまう`aXbXc`のような見出しに対しては、実際には一致しない(0件)ことを一時ファイルで確認済みです。`[regex]::Escape`によるエスケープが機能しています。
 
-<!-- タスク5以降で、結果表示・エンドツーエンドの実行例をここに追記する -->
+#### 検索結果のコンソール表示(タスク5)
+
+```powershell
+. ./Search-MdHeading.ps1 -Path ./fixtures/docs -Keyword Search
+
+# 1. 複数ファイルにまたがる結果 -> ファイルパスごとにグループ化されて表示される
+$files = @(Get-MdFile -Path "./fixtures/docs")
+$all = @()
+foreach ($f in $files) { $all += @(Find-MatchingHeading -File $f -Keyword "Search") }
+Write-SearchResult -Result $all
+# => /path/to/fixtures/docs/case-test.md
+# =>   # SEARCH in different case
+# =>     > # SEARCH in different case
+# => /path/to/fixtures/docs/getting-started.md
+# =>   # Search Tool 概要
+# =>     > # Search Tool 概要
+# => (以下、ファイルごとに同様の形式で続く)
+
+# 2. ヒットなしの場合 -> 専用メッセージが表示される
+Write-SearchResult -Result @()
+# => キーワードにヒットする見出しが見つかりませんでした。
+```
+
+> 補足: 結果はコンソール(標準出力)にのみ表示され、ファイルへの出力は行いません。
+
+<!-- タスク6以降で、パイプライン全体・エンドツーエンドの実行例をここに追記する -->
