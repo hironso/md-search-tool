@@ -204,8 +204,8 @@ function Get-MdFile {
 | Requirements | 3.1, 3.2, 3.3, 3.4, 3.5 |
 
 **Responsibilities & Constraints**
-- 行頭が`#`(レベル1)または`##`(レベル2)で始まる行のみを見出し行として扱う
-- `###`以降の見出し行および見出し以外の本文行を対象から除外する
+- 行頭(CommonMarkのATX見出し仕様に準拠し、見出し記号の前に最大3文字までの半角スペースインデントを許容する)が`#`(レベル1)または`##`(レベル2)で始まる行のみを見出し行として扱う
+- `###`以降の見出し行、4文字以上のインデントを持つ行(CommonMark上コードブロック扱いとなるため)、および見出し以外の本文行を対象から除外する
 - 見出しテキスト部分(先頭の`#`記号と直後の空白を除いた文字列)に対してキーワードが部分一致するかを判定する
 - キーワード比較は常に大文字小文字を区別しない
 
@@ -226,10 +226,11 @@ function Find-MatchingHeading {
 ```
 - Preconditions: `$File`は存在し読み取り可能なテキストファイルである。`$Keyword`は非空文字列である。
 - Postconditions: キーワードに一致する見出し行ごとに1件の結果オブジェクトを返す。一致がない場合は空配列を返す。
-- Invariants: `#`/`##`(先頭が3つ以上の`#`ではない行)のみを評価対象とする。比較は常に大文字小文字を区別しない。
+- Invariants: `#`/`##`(先頭が3つ以上の`#`ではない行)のみを評価対象とする。見出し記号の前に最大3文字までの半角スペースインデントを許容する(CommonMarkのATX見出し仕様に準拠)。比較は常に大文字小文字を区別しない。
 
 **Implementation Notes**
-- Integration: `Select-String -Path $File.FullName -Pattern $pattern`を用い、`$pattern`は「行頭の`#`が1〜2個で3個目以降が続かないこと」と「`[regex]::Escape($Keyword)`でエスケープしたキーワード」を組み合わせて構成する。これによりファイル全体を変数へ読み込まずに行単位で検索できる(`research.md`参照)。
+- Integration: `Get-MdFile`から得た`FileInfo`オブジェクトを`Select-String -Pattern $pattern`へパイプで渡す(`$File | Select-String -Pattern $pattern`)。ファイルパス文字列を`-Path`パラメータへ直接渡すと、`Select-String`がワイルドカードとして再展開するため、`[`や`]`を含むファイル名で検索漏れが起きる(`Select-String`には`-LiteralPath`が存在しない)。パイプ経由で`FileInfo`を渡すことでこの問題を回避する(`research.md`参照)。
+- Integration: `$pattern`は名前付きキャプチャグループを用いて`^\s{0,3}(?<hashes>#{1,2})(?!#)\s+(?<text>.*KEYWORD.*)$`の形で構成する(`KEYWORD`は`[regex]::Escape($Keyword)`でエスケープした文字列)。マッチした`MatchInfo`から、`HeadingLevel`は`hashes`グループの値の文字数、`HeadingText`は`text`グループの値、`LineText`は`$match.Line`としてそれぞれ導出する。これによりファイル全体を変数へ読み込まずに行単位で検索できる(`research.md`参照)。
 - Validation: キーワードは正規表現メタ文字として解釈されないよう、パターン組み立て前に必ずエスケープする。
 - Risks: 見出し記号直後にスペースがない行(例: `#見出し`)は見出しとして検出されない。標準的なMarkdown構文に準拠した既知の制限として扱う(`research.md`のRisks参照)。
 
