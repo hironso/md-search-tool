@@ -73,7 +73,7 @@ function Find-MatchingHeading {
         [PSCustomObject]@{
             FilePath     = $File.FullName
             HeadingLevel = $_.Matches[0].Groups['hashes'].Value.Length
-            HeadingText  = $_.Matches[0].Groups['text'].Value
+            HeadingText  = $_.Matches[0].Groups['text'].Value.Trim()
             LineText     = $_.Line
         }
     })

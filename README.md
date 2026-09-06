@@ -136,6 +136,15 @@ $r3.Count
 
 > 補足(否定的検証): `a.b`というキーワードが、もし正規表現として解釈されていた場合に誤って一致してしまう`aXbXc`のような見出しに対しては、実際には一致しない(0件)ことを一時ファイルで確認済みです。`[regex]::Escape`によるエスケープが機能しています。
 
+```powershell
+# 7. 見出し末尾に空白がある場合、HeadingTextはトリムされ、LineText(生の行)は元のまま保持される
+# 例: "# Search Heading with trailing spaces   " (末尾に半角スペース3つ)
+@(Find-MatchingHeading -File (Get-Item ./path/to/trailing-space-test.md) -Keyword "Search") |
+    ForEach-Object { "HeadingText=[$($_.HeadingText)] / LineText=[$($_.LineText)]" }
+# => HeadingText=[Search Heading with trailing spaces] (末尾空白なし)
+# => LineText=[# Search Heading with trailing spaces   ] (末尾空白あり、生の行のまま)
+```
+
 #### 検索結果のコンソール表示(タスク5)
 
 ```powershell
