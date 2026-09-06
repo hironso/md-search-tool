@@ -43,6 +43,12 @@
 - **Findings**: CommonMarkのATX見出し仕様では、見出し記号の前に最大3文字までの半角スペースインデントを許容し、4文字以上のインデントはコードブロックとして扱われる。また、正規表現に名前付きキャプチャグループを用いることで、マッチ結果からのフィールド導出手順を一意に規定できる。
 - **Implications**: 見出し検出パターンを`^\s{0,3}(?<hashes>#{1,2})(?!#)\s+(?<text>.*KEYWORD.*)$`の形に更新し、`hashes`グループの文字数からHeadingLevel、`text`グループの値からHeadingTextを導出する手順をdesign.mdに明記した。
 
+### [string]型パラメータ省略時の実際のバインド値(実装時の発見)
+- **Context**: タスク2(パラメータ検証)の実装中に、`-Path`/`-Keyword`を省略した際の実際の変数の値を確認した。
+- **Sources Consulted**: `pwsh`での実機検証(`param([string]$X)`を宣言した関数を引数なしで呼び出し、`$null -eq $X`と`$X -eq [string]::Empty`を比較)。
+- **Findings**: `[string]`型のパラメータを省略して呼び出すと、変数は`$null`ではなく空文字列(`[string]::Empty`)にバインドされる。そのため「未指定」と「明示的に空文字列を渡した」場合を`$null`比較で区別することはできない。
+- **Implications**: `Test-SearchParameter`の検証は`$null -eq $Path`ではなく`[string]::IsNullOrEmpty($Path)`/`[string]::IsNullOrEmpty($Keyword)`を用いる設計に変更した。`-Keyword`については「未指定」(要件1.2)と「空文字列」(要件1.4)が実行時に同一条件になるため、同じメッセージで両方を扱う(design.md参照)。
+
 ## Architecture Pattern Evaluation
 
 | Option | Description | Strengths | Risks / Limitations | Notes |

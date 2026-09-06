@@ -148,13 +148,13 @@ function Test-SearchParameter {
     # 戻り値なし。検証に失敗した場合は説明的なメッセージを持つ終了エラーを送出する。
 }
 ```
-- Preconditions: `$Path`と`$Keyword`は、スクリプトのパラメータブロックからバインドされた生の値である(`Mandatory`属性は付与しない)。
+- Preconditions: `$Path`と`$Keyword`は、スクリプトのパラメータブロックからバインドされた生の値である(`Mandatory`属性は付与しない)。`[string]`型のパラメータが省略された場合、PowerShellは`$null`ではなく空文字列(`[string]::Empty`)にバインドするため、「未指定」と「明示的な空文字列」は実行時に区別できない(`research.md`参照)。
 - Postconditions: 関数が正常に戻るのは、`$Path`が既存ディレクトリを指し、`$Keyword`が非空文字列である場合のみ。
 - Invariants: 検証以外の副作用を持たない。ファイル内容の読み取りは行わない。
 
 **Implementation Notes**
 - Integration: スクリプト本体は`-Path`/`-Keyword`を`Mandatory`にせず宣言し、代わりに本関数で検証する(対話的な値入力プロンプトを避けるため。詳細は`research.md`のDesign Decisionを参照)。
-- Validation: 「未指定または空」「パス不存在」を別メッセージとして区別し、要件1.2/1.3/1.4のメッセージ内容の違いを反映する。
+- Validation: `[string]::IsNullOrEmpty($Path)`→ 1.2(パラメータ不足)、`[string]::IsNullOrEmpty($Keyword)`→ 1.4(キーワード不正。`-Keyword`が省略された場合もこのメッセージで扱う。上記のとおりPowerShellの型付きパラメータは省略時も空文字列にバインドされるため、1.2と1.4は`-Keyword`側では同一の実行時条件になる)、`Test-Path -LiteralPath $Path -PathType Container`が偽 → 1.3(パス不存在)、の順で判定し、それぞれ異なるメッセージの終了エラーを送出する。`Test-Path`は`-LiteralPath`を用いてワイルドカード再展開を避ける。
 - Risks: なし(単純な事前条件チェック)。
 
 ### ファイルシステム

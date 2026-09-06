@@ -45,4 +45,29 @@ fixtures/
 
 > 各タスクの実装が進むごとに、このセクションへ実行例と期待される出力を追記していきます。
 
-<!-- タスク2以降で、パラメータ検証・ファイル探索・見出し検索・結果表示・エラーケースの実行例をここに追記する -->
+#### パラメータ検証(タスク2)
+
+```powershell
+# 1. -Pathを省略 -> パラメータ不足のエラーが表示され、検索は実行されない
+pwsh ./Search-MdHeading.ps1 -Keyword Search
+# => Write-Error: パラメータが不足しています。-Pathを指定してください。
+
+# 2. -Keywordを省略 -> キーワード不正のエラーが表示され、検索は実行されない
+pwsh ./Search-MdHeading.ps1 -Path ./fixtures/docs
+# => Write-Error: -Keywordに空の文字列は指定できません。検索キーワードを指定してください。
+
+# 3. -Keywordに空文字列を指定 -> 2と同じエラーが表示され、検索は実行されない
+pwsh ./Search-MdHeading.ps1 -Path ./fixtures/docs -Keyword ""
+# => Write-Error: -Keywordに空の文字列は指定できません。検索キーワードを指定してください。
+
+# 4. -Pathに存在しないフォルダを指定 -> パス不存在のエラーが表示され、検索は実行されない
+pwsh ./Search-MdHeading.ps1 -Path ./fixtures/does-not-exist -Keyword Search
+# => Write-Error: 指定されたフォルダ './fixtures/does-not-exist' が見つかりません。
+
+# 5. 有効な入力 -> 検証を通過する(現時点ではファイル探索以降が未実装のため、出力なしで正常終了)
+pwsh ./Search-MdHeading.ps1 -Path ./fixtures/docs -Keyword Search
+```
+
+> 補足: PowerShellの`[string]`型パラメータは省略時も`$null`ではなく空文字列にバインドされるため、「-Keyword未指定」と「-Keywordに空文字列を指定」は実行時には区別できず、同じエラーメッセージになります(詳細は`research.md`参照)。
+
+<!-- タスク3以降で、ファイル探索・見出し検索・結果表示・エンドツーエンドの実行例をここに追記する -->
