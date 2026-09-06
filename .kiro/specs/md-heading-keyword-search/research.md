@@ -49,6 +49,12 @@
 - **Findings**: `[string]`型のパラメータを省略して呼び出すと、変数は`$null`ではなく空文字列(`[string]::Empty`)にバインドされる。そのため「未指定」と「明示的に空文字列を渡した」場合を`$null`比較で区別することはできない。
 - **Implications**: `Test-SearchParameter`の検証は`$null -eq $Path`ではなく`[string]::IsNullOrEmpty($Path)`/`[string]::IsNullOrEmpty($Keyword)`を用いる設計に変更した。`-Keyword`については「未指定」(要件1.2)と「空文字列」(要件1.4)が実行時に同一条件になるため、同じメッセージで両方を扱う(design.md参照)。
 
+### 関数境界をまたぐ配列の「展開」(実装時の発見)
+- **Context**: タスク3(ファイル探索)の実装中に、`Get-MdFile`が0件時・1件時にそれぞれどう振る舞うかを実機検証した。
+- **Sources Consulted**: `pwsh`での実機検証(`return @()`を持つ関数の戻り値を`$null -eq`および`-is [array]`で確認)。
+- **Findings**: PowerShellの関数はパイプラインに出力を1つずつ書き出すため、関数内部で`return @(...)`のように配列を返しても、関数境界を越えると「展開」される。呼び出し側が結果を単純代入(`$x = Get-MdFile ...`)で受け取ると、0件のときは`$null`に、1件のときは配列ではなく単一のスカラー値になる(2件以上のときのみ配列のまま)。
+- **Implications**: `Get-MdFile`(および同様に複数件を返しうる他の関数)の呼び出し側は、必ず`@(Get-MdFile -Path $Path)`のように呼び出し時点で`@(...)`により再ラップし、0件・1件・複数件のいずれでも一貫して配列として扱う。この呼び出し規約をScriptEntryPoint(タスク6)の実装で徹底する。
+
 ## Architecture Pattern Evaluation
 
 | Option | Description | Strengths | Risks / Limitations | Notes |

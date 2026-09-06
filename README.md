@@ -70,4 +70,23 @@ pwsh ./Search-MdHeading.ps1 -Path ./fixtures/docs -Keyword Search
 
 > 補足: PowerShellの`[string]`型パラメータは省略時も`$null`ではなく空文字列にバインドされるため、「-Keyword未指定」と「-Keywordに空文字列を指定」は実行時には区別できず、同じエラーメッセージになります(詳細は`research.md`参照)。
 
-<!-- タスク3以降で、ファイル探索・見出し検索・結果表示・エンドツーエンドの実行例をここに追記する -->
+#### Markdownファイル探索(タスク3)
+
+`Get-MdFile`関数単体の動作は、スクリプトをドットソース化して直接呼び出すことで確認できます。
+
+```powershell
+# スクリプトをドットソース化(パラメータ検証を通過させるため有効な値を指定)
+. ./Search-MdHeading.ps1 -Path ./fixtures/docs -Keyword Search
+
+# 1. サブフォルダを含む再帰探索 -> 6件の.mdファイルが取得できる(.txtファイルは除外される)
+@(Get-MdFile -Path "./fixtures/docs") | ForEach-Object { $_.Name }
+# => advanced.md, case-test.md, getting-started.md, indented.md, old-notes.md, special-chars.md
+
+# 2. .mdファイルが存在しないフォルダ -> 0件(空配列)
+@(Get-MdFile -Path "./fixtures/empty-folder").Count
+# => 0
+```
+
+> 補足: PowerShellは関数境界を越えるとパイプライン出力が「展開」されるため、`Get-MdFile`の戻り値が0件のときは`$null`に、1件のときは配列ではなく単一の値になってしまいます。呼び出し側は必ず`@(Get-MdFile ...)`のように**呼び出し時点で`@(...)`により再ラップ**し、0件・1件・複数件のいずれでも配列として扱ってください(詳細は`research.md`参照)。
+
+<!-- タスク4以降で、見出し検索・結果表示・エンドツーエンドの実行例をここに追記する -->

@@ -190,9 +190,9 @@ function Get-MdFile {
 - Invariants: ファイル内容には関与せず、拡張子と所在のみで判定する。
 
 **Implementation Notes**
-- Integration: `Get-ChildItem -Path $Path -Recurse -File -Filter *.md`を使用し、プロバイダーレベルで拡張子フィルタリングを行うことで、大量ファイル探索時の性能を確保する(`research.md`参照)。
+- Integration: `Get-ChildItem -LiteralPath $Path -Recurse -File -Filter '*.md'`を使用し、プロバイダーレベルで拡張子フィルタリングを行うことで、大量ファイル探索時の性能を確保する(`research.md`参照)。`-LiteralPath`を用いることで、フォルダ名に`[`等を含む場合のワイルドカード再展開を回避する。
 - Validation: 該当なし(呼び出し元が0件判定を行う)。
-- Risks: なし。
+- Risks: **呼び出し側の注意点**: PowerShellは関数境界を越えるとパイプライン出力を「展開」するため、`Get-MdFile`内部で`return @(...)`していても、呼び出し側が結果を0件で受け取ると`$null`に、1件で受け取るとスカラー値(配列ではない単一の`FileInfo`)になる。呼び出し側は必ず`$files = @(Get-MdFile -Path $Path)`のように**呼び出し時点で`@(...)`により再ラップ**し、常に配列として扱うこと(`research.md`参照)。
 
 ### ドメインロジック
 

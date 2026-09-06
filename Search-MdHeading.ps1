@@ -42,6 +42,18 @@ function Test-SearchParameter {
     }
 }
 
+function Get-MdFile {
+    <#
+    .SYNOPSIS
+        検証済みの$Path配下を再帰的に走査し、拡張子が.mdであるファイルを収集する。
+    #>
+    param(
+        [string] $Path
+    )
+
+    return @(Get-ChildItem -LiteralPath $Path -Recurse -File -Filter '*.md')
+}
+
 try {
     Test-SearchParameter -Path $Path -Keyword $Keyword
 }
