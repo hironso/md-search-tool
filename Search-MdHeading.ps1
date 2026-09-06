@@ -110,3 +110,17 @@ catch {
     Write-Error $_.Exception.Message
     exit 1
 }
+
+$mdFiles = @(Get-MdFile -Path $Path)
+
+if ($mdFiles.Count -eq 0) {
+    Write-Output "指定されたフォルダ配下に.mdファイルが見つかりませんでした。"
+    exit 0
+}
+
+$searchResults = @()
+foreach ($mdFile in $mdFiles) {
+    $searchResults += @(Find-MatchingHeading -File $mdFile -Keyword $Keyword)
+}
+
+Write-SearchResult -Result $searchResults

@@ -161,4 +161,27 @@ Write-SearchResult -Result @()
 
 > 補足: 結果はコンソール(標準出力)にのみ表示され、ファイルへの出力は行いません。
 
-<!-- タスク6以降で、パイプライン全体・エンドツーエンドの実行例をここに追記する -->
+#### パイプライン全体・エンドツーエンド(タスク6・7.1)
+
+```powershell
+# 1. ヒットあり(複数ファイル横断) -> ファイルごとにグループ化された検索結果が表示される
+pwsh ./Search-MdHeading.ps1 -Path ./fixtures/docs -Keyword Search
+
+# 2. ヒットなし -> ヒットなしメッセージが表示される
+pwsh ./Search-MdHeading.ps1 -Path ./fixtures/docs -Keyword "存在しないキーワードXYZ123"
+# => キーワードにヒットする見出しが見つかりませんでした。
+
+# 3. .mdファイルが存在しないフォルダ -> 対象ファイルなしメッセージが表示される(検索は実行されない)
+pwsh ./Search-MdHeading.ps1 -Path ./fixtures/empty-folder -Keyword Search
+# => 指定されたフォルダ配下に.mdファイルが見つかりませんでした。
+
+# 4. パラメータ不正(例: -Keyword未指定) -> エラーメッセージが表示され、以降の処理は実行されない
+pwsh ./Search-MdHeading.ps1 -Path ./fixtures/docs
+# => Write-Error: -Keywordに空の文字列は指定できません。検索キーワードを指定してください。
+
+# 5. -Pathに存在しないフォルダを指定 -> エラーメッセージが表示され、ファイル探索は行われない
+pwsh ./Search-MdHeading.ps1 -Path ./fixtures/does-not-exist -Keyword Search
+# => Write-Error: 指定されたフォルダ './fixtures/does-not-exist' が見つかりません。
+```
+
+上記5パターンすべてを手動実行し、要件どおりの出力になることを確認済みです。
